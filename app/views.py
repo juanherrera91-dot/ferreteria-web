@@ -1,36 +1,28 @@
 from flask import current_app, render_template
 
-"""
-    Create your Model based REST API::
+from flask_appbuilder import ModelView
+from flask_appbuilder.models.sqla.interface import SQLAInterface
 
-    class MyModelApi(ModelRestApi):
-        datamodel = SQLAInterface(MyModel)
+from .models import Categoria, Producto, Venta, DetalleVenta
 
-    appbuilder.add_api(MyModelApi)
+class CategoriaView(ModelView):
+    datamodel = SQLAInterface(Categoria)
 
-
-    Create your Views::
-
-
-    class MyModelView(ModelView):
-        datamodel = SQLAInterface(MyModel)
+    list_columns = ['nombre']
 
 
-    Next, register your Views on create_app Flask factory::
+class ProductoView(ModelView):
+    datamodel = SQLAInterface(Producto)
+
+    list_columns = ['nombre', 'precio', 'stock', 'categoria']
 
 
-    appbuilder.add_view(
-        MyModelView,
-        "My View",
-        icon="fa-folder-open-o",
-        category="My Category",
-        category_icon='fa-envelope'
-    )
-"""
+class VentaView(ModelView):
+    datamodel = SQLAInterface(Venta)
 
-"""
-    Application wide 404 error handler
-"""
+
+class DetalleVentaView(ModelView):
+    datamodel = SQLAInterface(DetalleVenta)
 
 
 @current_app.errorhandler(404)

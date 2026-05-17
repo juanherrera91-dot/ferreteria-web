@@ -13,3 +13,32 @@ def create_app() -> Flask:
         # Registering the views and APIs
         ...
     return app
+from .views import *
+
+appbuilder.add_view(
+    CategoriaView,
+    "Categorias",
+    icon="fa-folder",
+    category="Ferreteria"
+)
+
+appbuilder.add_view(
+    ProductoView,
+    "Productos",
+    icon="fa-box",
+    category="Ferreteria"
+)
+
+appbuilder.add_view(
+    VentaView,
+    "Ventas",
+    icon="fa-shopping-cart",
+    category="Ferreteria"
+)
+
+appbuilder.add_view(
+    DetalleVentaView,
+    "Detalle Venta",
+    icon="fa-list",
+    category="Ferreteria"
+)
