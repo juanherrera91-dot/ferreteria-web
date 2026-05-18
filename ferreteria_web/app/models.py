@@ -2,8 +2,12 @@ from .extensions import db
 from datetime import datetime
 
 
+# =========================
 # 👤 USUARIO
+# =========================
 class Usuario(db.Model):
+
+    __tablename__ = 'usuario'
 
     id = db.Column(db.Integer, primary_key=True)
 
@@ -20,28 +24,87 @@ class Usuario(db.Model):
 
     ventas = db.relationship(
         'Venta',
-        backref='usuario'
+        back_populates='usuario',
+        cascade='all, delete-orphan'
     )
 
+    def __repr__(self):
+        return f'<Usuario {self.username}>'
 
+
+# =========================
+# 👥 CLIENTE
+# =========================
+class Cliente(db.Model):
+
+    __tablename__ = 'cliente'
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    nombre = db.Column(
+        db.String(150),
+        nullable=False
+    )
+
+    telefono = db.Column(
+        db.String(30)
+    )
+
+    direccion = db.Column(
+        db.String(200)
+    )
+
+    ci_nit = db.Column(
+        db.String(50),
+        unique=True
+    )
+
+    fecha_registro = db.Column(
+        db.DateTime,
+        default=datetime.utcnow
+    )
+
+    ventas = db.relationship(
+        'Venta',
+        back_populates='cliente',
+        cascade='all, delete-orphan'
+    )
+
+    def __repr__(self):
+        return f'<Cliente {self.nombre}>'
+
+
+# =========================
 # 📁 CATEGORIA
+# =========================
 class Categoria(db.Model):
+
+    __tablename__ = 'categoria'
 
     id = db.Column(db.Integer, primary_key=True)
 
     nombre = db.Column(
         db.String(100),
-        nullable=False
+        nullable=False,
+        unique=True
     )
 
     productos = db.relationship(
         'Producto',
-        back_populates='categoria'
+        back_populates='categoria',
+        cascade='all, delete-orphan'
     )
 
+    def __repr__(self):
+        return f'<Categoria {self.nombre}>'
 
+
+# =========================
 # 🔧 PRODUCTO
+# =========================
 class Producto(db.Model):
+
+    __tablename__ = 'producto'
 
     id = db.Column(db.Integer, primary_key=True)
 
@@ -52,24 +115,25 @@ class Producto(db.Model):
 
     precio = db.Column(
         db.Float,
-        nullable=False
+        nullable=False,
+        default=0
     )
 
     stock = db.Column(
         db.Integer,
-        nullable=False
+        nullable=False,
+        default=0
     )
 
-    # ✅ FECHA DE REGISTRO
     fecha_registro = db.Column(
         db.DateTime,
         default=datetime.utcnow
     )
 
-    # ✅ RELACION CON CATEGORIA
     categoria_id = db.Column(
         db.Integer,
-        db.ForeignKey('categoria.id')
+        db.ForeignKey('categoria.id'),
+        nullable=False
     )
 
     categoria = db.relationship(
@@ -77,15 +141,22 @@ class Producto(db.Model):
         back_populates='productos'
     )
 
-    # ✅ RELACION CON DETALLE VENTA
     detalles = db.relationship(
         'DetalleVenta',
-        back_populates='producto'
+        back_populates='producto',
+        cascade='all, delete-orphan'
     )
 
+    def __repr__(self):
+        return f'<Producto {self.nombre}>'
 
+
+# =========================
 # 🧾 VENTA
+# =========================
 class Venta(db.Model):
+
+    __tablename__ = 'venta'
 
     id = db.Column(db.Integer, primary_key=True)
 
@@ -94,19 +165,50 @@ class Venta(db.Model):
         default=datetime.utcnow
     )
 
+    total = db.Column(
+        db.Float,
+        nullable=False,
+        default=0
+    )
+
     usuario_id = db.Column(
         db.Integer,
-        db.ForeignKey('usuario.id')
+        db.ForeignKey('usuario.id'),
+        nullable=False
+    )
+
+    cliente_id = db.Column(
+        db.Integer,
+        db.ForeignKey('cliente.id'),
+        nullable=False
+    )
+
+    usuario = db.relationship(
+        'Usuario',
+        back_populates='ventas'
+    )
+
+    cliente = db.relationship(
+        'Cliente',
+        back_populates='ventas'
     )
 
     detalles = db.relationship(
         'DetalleVenta',
-        back_populates='venta'
+        back_populates='venta',
+        cascade='all, delete-orphan'
     )
 
+    def __repr__(self):
+        return f'<Venta {self.id}>'
 
+
+# =========================
 # 📄 DETALLE VENTA
+# =========================
 class DetalleVenta(db.Model):
+
+    __tablename__ = 'detalle_venta'
 
     id = db.Column(db.Integer, primary_key=True)
 
@@ -115,19 +217,28 @@ class DetalleVenta(db.Model):
         nullable=False
     )
 
+    precio_unitario = db.Column(
+        db.Float,
+        nullable=False,
+        default=0
+    )
+
     subtotal = db.Column(
         db.Float,
-        nullable=False
+        nullable=False,
+        default=0
     )
 
     venta_id = db.Column(
         db.Integer,
-        db.ForeignKey('venta.id')
+        db.ForeignKey('venta.id'),
+        nullable=False
     )
 
     producto_id = db.Column(
         db.Integer,
-        db.ForeignKey('producto.id')
+        db.ForeignKey('producto.id'),
+        nullable=False
     )
 
     venta = db.relationship(
@@ -139,3 +250,6 @@ class DetalleVenta(db.Model):
         'Producto',
         back_populates='detalles'
     )
+
+    def __repr__(self):
+        return f'<DetalleVenta {self.id}>'

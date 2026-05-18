@@ -1,48 +1,121 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-{% block content %}
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
-<div class="container mt-4">
+    <title>Nueva Venta</title>
 
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3>🧾 Gestión de Ventas</h3>
+    <style>
+        body{
+            background: linear-gradient(135deg, #0d6efd, #6610f2);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
 
-        <a href="/crear_venta" class="btn btn-success">
-            + Nueva Venta
-        </a>
-    </div>
+        .card-venta{
+            width: 100%;
+            max-width: 650px;
+            border: none;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
 
-    <div class="card shadow">
-        <div class="card-body">
+        .card-header{
+            background: #198754;
+            color: white;
+            text-align: center;
+            padding: 25px;
+        }
 
-            <table class="table table-hover table-striped align-middle">
-                <thead class="table-dark">
-                    <tr>
-                        <th>ID</th>
-                        <th>Fecha</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
+        .titulo{
+            font-size: 28px;
+            font-weight: bold;
+        }
 
-                <tbody>
-                    {% for v in ventas %}
-                    <tr>
-                        <td>{{ v.id }}</td>
-                        <td>{{ v.fecha }}</td>
-                        <td>
-                            <a href="/venta_detalle/{{ v.id }}" class="btn btn-primary btn-sm">
-                                👁 Ver Venta
-                            </a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
+        .btn-venta{
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
 
-            </table>
+        .btn-venta:hover{
+            transform: scale(1.03);
+        }
+
+        .form-select{
+            border-radius: 12px;
+            padding: 12px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="card card-venta">
+
+        <div class="card-header">
+            <h2 class="titulo">🛒 Registrar Nueva Venta</h2>
+            <p class="mb-0">Seleccione un cliente para continuar</p>
+        </div>
+
+        <div class="card-body p-4">
+
+            <form action="/crear_venta" method="POST">
+
+                <div class="mb-4">
+
+                    <label class="form-label fw-bold">
+                        👤 Cliente
+                    </label>
+
+                    <select name="cliente_id"
+                            class="form-select form-select-lg"
+                            required>
+
+                        <option value="">
+                            Seleccione Cliente
+                        </option>
+
+                        {% if clientes %}
+
+                            {% for c in clientes %}
+
+                                <option value="{{ c.id }}">
+                                    {{ c.nombre }}
+                                </option>
+
+                            {% endfor %}
+
+                        {% endif %}
+
+                    </select>
+
+                </div>
+
+                <div class="d-grid">
+
+                    <button type="submit"
+                            class="btn btn-success btn-lg btn-venta">
+
+                        ➕ Crear Nueva Venta
+
+                    </button>
+
+                </div>
+
+            </form>
 
         </div>
+
     </div>
 
-</div>
-
-{% endblock %}
+</body>
+</html>

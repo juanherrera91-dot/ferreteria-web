@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 {% extends "base.html" %}
 
 {% block content %}
@@ -43,16 +44,15 @@
         <select name="categoria" class="form-control">
 
             {% for c in categorias %}
-
-                <option value="{{ c.id }}"
-                    {% if producto.categoria_id == c.id %}
-                        selected
-                    {% endif %}>
-
-                    {{ c.nombre }}
-
-                </option>
-
+                {% if producto.categoria_id == c.id %}
+                    <option value="{{ c.id }}" selected>
+                        {{ c.nombre }}
+                    </option>
+                {% else %}
+                    <option value="{{ c.id }}">
+                        {{ c.nombre }}
+                    </option>
+                {% endif %}
             {% endfor %}
 
         </select>
