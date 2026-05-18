@@ -1,15 +1,20 @@
-from .extensions import db
+from .database import db
 from datetime import datetime
+from flask_login import UserMixin
 
 
-# =========================
-# 👤 USUARIO
-# =========================
-class Usuario(db.Model):
+# ==========================================
+# USUARIO
+# ==========================================
+
+class Usuario(UserMixin, db.Model):
 
     __tablename__ = 'usuario'
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
 
     username = db.Column(
         db.String(100),
@@ -29,17 +34,22 @@ class Usuario(db.Model):
     )
 
     def __repr__(self):
+
         return f'<Usuario {self.username}>'
 
 
-# =========================
-# 👥 CLIENTE
-# =========================
+# ==========================================
+# CLIENTE
+# ==========================================
+
 class Cliente(db.Model):
 
     __tablename__ = 'cliente'
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
 
     nombre = db.Column(
         db.String(150),
@@ -70,23 +80,24 @@ class Cliente(db.Model):
         cascade='all, delete-orphan'
     )
 
-    def __repr__(self):
-        return f'<Cliente {self.nombre}>'
 
+# ==========================================
+# CATEGORIA
+# ==========================================
 
-# =========================
-# 📁 CATEGORIA
-# =========================
 class Categoria(db.Model):
 
     __tablename__ = 'categoria'
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
 
     nombre = db.Column(
         db.String(100),
-        nullable=False,
-        unique=True
+        unique=True,
+        nullable=False
     )
 
     productos = db.relationship(
@@ -95,18 +106,19 @@ class Categoria(db.Model):
         cascade='all, delete-orphan'
     )
 
-    def __repr__(self):
-        return f'<Categoria {self.nombre}>'
 
+# ==========================================
+# PRODUCTO
+# ==========================================
 
-# =========================
-# 🔧 PRODUCTO
-# =========================
 class Producto(db.Model):
 
     __tablename__ = 'producto'
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
 
     nombre = db.Column(
         db.String(100),
@@ -147,18 +159,19 @@ class Producto(db.Model):
         cascade='all, delete-orphan'
     )
 
-    def __repr__(self):
-        return f'<Producto {self.nombre}>'
 
+# ==========================================
+# VENTA
+# ==========================================
 
-# =========================
-# 🧾 VENTA
-# =========================
 class Venta(db.Model):
 
     __tablename__ = 'venta'
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
 
     fecha = db.Column(
         db.DateTime,
@@ -199,18 +212,19 @@ class Venta(db.Model):
         cascade='all, delete-orphan'
     )
 
-    def __repr__(self):
-        return f'<Venta {self.id}>'
 
+# ==========================================
+# DETALLE VENTA
+# ==========================================
 
-# =========================
-# 📄 DETALLE VENTA
-# =========================
 class DetalleVenta(db.Model):
 
     __tablename__ = 'detalle_venta'
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
 
     cantidad = db.Column(
         db.Integer,
@@ -219,14 +233,12 @@ class DetalleVenta(db.Model):
 
     precio_unitario = db.Column(
         db.Float,
-        nullable=False,
-        default=0
+        nullable=False
     )
 
     subtotal = db.Column(
         db.Float,
-        nullable=False,
-        default=0
+        nullable=False
     )
 
     venta_id = db.Column(
@@ -250,6 +262,3 @@ class DetalleVenta(db.Model):
         'Producto',
         back_populates='detalles'
     )
-
-    def __repr__(self):
-        return f'<DetalleVenta {self.id}>'

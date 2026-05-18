@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, session
+from flask import Blueprint, render_template, request, redirect, session, flash
 from .models import db, Producto, Categoria, Venta, DetalleVenta, Usuario, Cliente
 from .decorators import login_required
 import matplotlib.pyplot as plt
@@ -10,7 +10,20 @@ bp = Blueprint('bp', __name__)
 
 
 # =========================
-# 🏠 DASHBOARD PROFESIONAL
+# 🏠 HOME
+# =========================
+@bp.route('/')
+def home():
+
+    # VALIDAR SESIÓN
+    if 'user_id' in session:
+        return redirect('/dashboard')
+
+    return redirect('/login')
+
+
+# =========================
+# 🏠 DASHBOARD
 # =========================
 @bp.route('/dashboard')
 @login_required
@@ -21,7 +34,6 @@ def dashboard():
     categorias = Categoria.query.count()
     clientes = Cliente.query.count()
 
-    # 💰 total vendido
     total_ventas = db.session.query(
         db.func.sum(Venta.total)
     ).scalar()
@@ -29,13 +41,12 @@ def dashboard():
     if not total_ventas:
         total_ventas = 0
 
-    # 📊 gráfica stock
     datos = Producto.query.all()
 
     nombres = [p.nombre for p in datos]
     stock = [p.stock for p in datos]
 
-    plt.figure(figsize=(8,4))
+    plt.figure(figsize=(8, 4))
     plt.bar(nombres, stock)
     plt.title("📦 Stock de Productos")
     plt.xticks(rotation=45)
@@ -86,7 +97,8 @@ def add_producto():
     categoria_id = request.form.get('categoria')
 
     if not categoria_id:
-        return "❌ Debes seleccionar una categoría"
+        flash("Debes seleccionar una categoría")
+        return redirect('/productos')
 
     nuevo = Producto(
         nombre=request.form['nombre'].upper(),
@@ -97,6 +109,8 @@ def add_producto():
 
     db.session.add(nuevo)
     db.session.commit()
+
+    flash("Producto agregado correctamente")
 
     return redirect('/productos')
 
@@ -121,6 +135,8 @@ def edit_producto(id):
 
     db.session.commit()
 
+    flash("Producto actualizado")
+
     return redirect('/productos')
 
 
@@ -135,6 +151,8 @@ def delete_producto(id):
 
     db.session.delete(producto)
     db.session.commit()
+
+    flash("Producto eliminado")
 
     return redirect('/productos')
 
@@ -171,6 +189,8 @@ def add_cliente():
     db.session.add(nuevo)
     db.session.commit()
 
+    flash("Cliente agregado")
+
     return redirect('/clientes')
 
 
@@ -185,6 +205,8 @@ def delete_cliente(id):
 
     db.session.delete(cliente)
     db.session.commit()
+
+    flash("Cliente eliminado")
 
     return redirect('/clientes')
 
@@ -209,24 +231,27 @@ def ventas():
         ventas=data,
         clientes=clientes
     )
+
+
 # =========================
 # 🆕 CREAR VENTA
 # =========================
-@bp.route('/crear_venta', methods=['GET', 'POST'])
+@bp.route('/crear_venta', methods=['POST'])
 @login_required
 def crear_venta():
-
-    if request.method == 'GET':
-        return redirect('/ventas')
 
     usuario_id = session.get('user_id')
     cliente_id = request.form.get('cliente_id')
 
+    # VALIDAR LOGIN
     if not usuario_id:
-        return "❌ Usuario no autenticado"
+        flash("Usuario no autenticado")
+        return redirect('/login')
 
+    # VALIDAR CLIENTE
     if not cliente_id:
-        return "❌ Debes seleccionar un cliente"
+        flash("Debes seleccionar un cliente")
+        return redirect('/ventas')
 
     nueva = Venta(
         fecha=datetime.now(),
@@ -238,7 +263,10 @@ def crear_venta():
     db.session.add(nueva)
     db.session.commit()
 
+    flash("Venta creada correctamente")
+
     return redirect(f'/venta_detalle/{nueva.id}')
+
 
 # =========================
 # 🛒 DETALLE VENTA
@@ -257,6 +285,7 @@ def venta_detalle(id):
         total += d.subtotal
 
     venta.total = total
+
     db.session.commit()
 
     return render_template(
@@ -278,17 +307,20 @@ def add_detalle(venta_id):
     cantidad = request.form.get('cantidad')
 
     if not producto_id or not cantidad:
-        return "❌ Datos incompletos"
+        flash("Datos incompletos")
+        return redirect(f'/venta_detalle/{venta_id}')
 
     cantidad = int(cantidad)
 
     if cantidad <= 0:
-        return "❌ Cantidad inválida"
+        flash("Cantidad inválida")
+        return redirect(f'/venta_detalle/{venta_id}')
 
     producto = Producto.query.get_or_404(producto_id)
 
     if producto.stock < cantidad:
-        return "❌ Stock insuficiente"
+        flash("Stock insuficiente")
+        return redirect(f'/venta_detalle/{venta_id}')
 
     subtotal = producto.precio * cantidad
 
@@ -313,64 +345,13 @@ def add_detalle(venta_id):
 
     db.session.commit()
 
-    return redirect(f'/venta_detalle/{venta_id}')
-
-
-# =========================
-# 🗑 ELIMINAR DETALLE
-# =========================
-@bp.route('/delete_detalle/<int:id>/<int:venta_id>')
-@login_required
-def delete_detalle(id, venta_id):
-
-    detalle = DetalleVenta.query.get_or_404(id)
-
-    producto = Producto.query.get(detalle.producto_id)
-
-    if producto:
-        producto.stock += detalle.cantidad
-
-    venta = Venta.query.get(venta_id)
-
-    if venta:
-        venta.total -= detalle.subtotal
-
-        if venta.total < 0:
-            venta.total = 0
-
-    db.session.delete(detalle)
-    db.session.commit()
+    flash("Producto agregado a la venta")
 
     return redirect(f'/venta_detalle/{venta_id}')
 
 
 # =========================
-# 🗑 ELIMINAR VENTA
-# =========================
-@bp.route('/delete_venta/<int:id>')
-@login_required
-def delete_venta(id):
-
-    venta = Venta.query.get_or_404(id)
-
-    for d in venta.detalles:
-
-        producto = Producto.query.get(d.producto_id)
-
-        if producto:
-            producto.stock += d.cantidad
-
-        db.session.delete(d)
-
-    db.session.delete(venta)
-
-    db.session.commit()
-
-    return redirect('/ventas')
-
-
-# =========================
-# 📊 REPORTE DE VENTAS
+# 📊 REPORTES
 # =========================
 @bp.route('/reporte')
 @login_required
@@ -385,7 +366,7 @@ def reporte():
         fechas.append(v.fecha.strftime('%d/%m'))
         totales.append(v.total)
 
-    plt.figure(figsize=(8,4))
+    plt.figure(figsize=(8, 4))
     plt.plot(fechas, totales, marker='o')
     plt.title("📈 Reporte de Ventas")
     plt.xticks(rotation=45)
@@ -411,15 +392,3 @@ def reporte():
         total_general=total_general,
         ventas=ventas
     )
-
-
-# =========================
-# 🏠 HOME
-# =========================
-@bp.route('/')
-def home():
-
-    if 'user' in session:
-        return redirect('/dashboard')
-
-    return redirect('/login')
