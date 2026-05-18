@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <h3>🧾 Venta #{{ venta.id }}</h3>
+
+    <!-- FORMULARIO AGREGAR PRODUCTO -->
+    <div class="card shadow mb-3">
+        <div class="card-body">
+
+            <form method="POST" action="/add_detalle/{{ venta.id }}" class="row g-2">
+
+                <div class="col-md-6">
+                    <label class="form-label">Producto</label>
+                    <select name="producto_id" class="form-select" required>
+                        {% for p in productos %}
+                        <option value="{{ p.id }}">
+                            {{ p.nombre }} (Stock: {{ p.stock }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Cantidad</label>
+                    <input type="number" name="cantidad" class="form-control" required>
+                </div>
+
+                <div class="col-md-3 d-flex align-items-end">
+                    <button class="btn btn-success w-100">
+                        ➕ Agregar
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+    <!-- TABLA DETALLE -->
+    <div class="card shadow">
+        <div class="card-body">
+
+            <table class="table table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Producto</th>
+                        <th>Cantidad</th>
+                        <th>Subtotal</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% set total = namespace(value=0) %}
+
+                    {% for d in venta.detalles %}
+                    <tr>
+                        <td>{{ d.producto.nombre }}</td>
+                        <td>{{ d.cantidad }}</td>
+                        <td>Bs {{ d.subtotal }}</td>
+                        <td>
+                            <a href="/delete_detalle/{{ d.id }}/{{ venta.id }}"
+                               class="btn btn-danger btn-sm">
+                                🗑
+                            </a>
+                        </td>
+                    </tr>
+
+                    {% set total.value = total.value + d.subtotal %}
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="text-end">
+                <h4>Total: <span class="text-success">Bs {{ total.value }}</span></h4>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

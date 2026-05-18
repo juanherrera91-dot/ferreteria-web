@@ -1,0 +1,276 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container-fluid mt-4">
+
+    <!-- TITULO -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+            <h2 class="fw-bold">📦 Gestión de Productos</h2>
+            <p class="text-muted">
+                Administración de productos de la ferretería
+            </p>
+        </div>
+
+        <div>
+            <span class="badge bg-primary fs-6">
+                Total Productos: {{ productos|length }}
+            </span>
+        </div>
+
+    </div>
+
+    <!-- FORMULARIO -->
+    <div class="card shadow border-0 mb-4">
+
+        <div class="card-header bg-dark text-white">
+            ➕ Agregar Nuevo Producto
+        </div>
+
+        <div class="card-body">
+
+            <form method="POST" action="/add_producto">
+
+                <div class="row g-3">
+
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">
+                            Nombre
+                        </label>
+
+                        <input
+                            class="form-control"
+                            name="nombre"
+                            placeholder="Ingrese nombre"
+                            required
+                        >
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">
+                            Precio
+                        </label>
+
+                        <input
+                            class="form-control"
+                            type="number"
+                            step="0.01"
+                            name="precio"
+                            placeholder="0.00"
+                            required
+                        >
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">
+                            Stock
+                        </label>
+
+                        <input
+                            class="form-control"
+                            type="number"
+                            name="stock"
+                            placeholder="Cantidad"
+                            required
+                        >
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">
+                            Categoría
+                        </label>
+
+                        <select
+                            name="categoria"
+                            class="form-select"
+                            required
+                        >
+
+                            <option value="">
+                                Seleccione categoría
+                            </option>
+
+                            {% for c in categorias %}
+                                <option value="{{ c.id }}">
+                                    {{ c.nombre }}
+                                </option>
+                            {% endfor %}
+
+                        </select>
+                    </div>
+
+                    <div class="col-md-2 d-flex align-items-end">
+
+                        <button type="submit" class="btn btn-success w-100">
+                            ➕ Guardar
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    <!-- TABLA -->
+    <div class="card shadow border-0">
+
+        <div class="card-header bg-primary text-white">
+            📋 Lista de Productos
+        </div>
+
+        <div class="card-body">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle">
+
+                    <thead class="table-dark">
+
+                        <tr>
+                            <th>ID</th>
+                            <th>Producto</th>
+                            <th>Precio</th>
+                            <th>Stock</th>
+                            <th>Categoría</th>
+                            <th>Estado</th>
+                            <th width="180">Acciones</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {% for p in productos %}
+
+                        <tr>
+
+                            <td>
+                                <span class="badge bg-secondary">
+                                    {{ p.id }}
+                                </span>
+                            </td>
+
+                            <td class="fw-bold">
+                                {{ p.nombre }}
+                            </td>
+
+                            <td class="text-success fw-bold">
+                                Bs {{ p.precio }}
+                            </td>
+
+                            <td>
+
+                                {% if p.stock > 10 %}
+                                    <span class="badge bg-success">
+                                        {{ p.stock }}
+                                    </span>
+
+                                {% elif p.stock > 0 %}
+                                    <span class="badge bg-warning text-dark">
+                                        {{ p.stock }}
+                                    </span>
+
+                                {% else %}
+                                    <span class="badge bg-danger">
+                                        Sin stock
+                                    </span>
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+
+                                {% if p.categoria %}
+                                    <span class="badge bg-info text-dark">
+                                        {{ p.categoria.nombre }}
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary">
+                                        Sin categoría
+                                    </span>
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+
+                                {% if p.stock > 0 %}
+                                    <span class="text-success fw-bold">
+                                        ✔ Disponible
+                                    </span>
+                                {% else %}
+                                    <span class="text-danger fw-bold">
+                                        ✖ Agotado
+                                    </span>
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+
+                                <!-- EDITAR -->
+                                <form
+                                    method="POST"
+                                    action="/edit_producto/{{ p.id }}"
+                                    style="display:inline;"
+                                >
+
+                                    <input
+                                        type="hidden"
+                                        name="nombre"
+                                        value="{{ p.nombre }}"
+                                    >
+
+                                    <input
+                                        type="hidden"
+                                        name="precio"
+                                        value="{{ p.precio }}"
+                                    >
+
+                                    <input
+                                        type="hidden"
+                                        name="stock"
+                                        value="{{ p.stock }}"
+                                    >
+
+                                    <button type="submit" class="btn btn-warning btn-sm">
+                                        ✏ Editar
+                                    </button>
+
+                                </form>
+
+                                <!-- ELIMINAR -->
+                                <a
+                                    href="/delete_producto/{{ p.id }}"
+                                    class="btn btn-danger btn-sm"
+                                    onclick="return confirm('¿Desea eliminar este producto?')"
+                                >
+                                    🗑 Eliminar
+                                </a>
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
