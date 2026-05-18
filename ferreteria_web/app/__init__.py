@@ -5,7 +5,7 @@ from .views import bp
 from .auth import bcrypt
 
 def create_app():
-    app = Flask(__name__)
+    app = Flask(__name__, template_folder="templates")
 
     app.config['SECRET_KEY'] = 'secret123'
     app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/ferreteria_db'

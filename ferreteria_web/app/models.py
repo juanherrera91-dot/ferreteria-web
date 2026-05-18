@@ -1,40 +1,141 @@
-from flask_sqlalchemy import SQLAlchemy
+from .extensions import db
+from datetime import datetime
 
-db = SQLAlchemy()
 
+# 👤 USUARIO
 class Usuario(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(100), unique=True)
-    password = db.Column(db.String(200))
 
+    id = db.Column(db.Integer, primary_key=True)
+
+    username = db.Column(
+        db.String(100),
+        unique=True,
+        nullable=False
+    )
+
+    password = db.Column(
+        db.String(200),
+        nullable=False
+    )
+
+    ventas = db.relationship(
+        'Venta',
+        backref='usuario'
+    )
+
+
+# 📁 CATEGORIA
 class Categoria(db.Model):
+
     id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(100))
 
-    productos = db.relationship('Producto', back_populates='categoria')
+    nombre = db.Column(
+        db.String(100),
+        nullable=False
+    )
 
+    productos = db.relationship(
+        'Producto',
+        back_populates='categoria'
+    )
+
+
+# 🔧 PRODUCTO
 class Producto(db.Model):
+
     id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(100))
-    precio = db.Column(db.Float)
-    stock = db.Column(db.Integer)
 
-    categoria_id = db.Column(db.Integer, db.ForeignKey('categoria.id'))
-    categoria = db.relationship('Categoria', back_populates='productos')
+    nombre = db.Column(
+        db.String(100),
+        nullable=False
+    )
 
+    precio = db.Column(
+        db.Float,
+        nullable=False
+    )
+
+    stock = db.Column(
+        db.Integer,
+        nullable=False
+    )
+
+    # ✅ FECHA DE REGISTRO
+    fecha_registro = db.Column(
+        db.DateTime,
+        default=datetime.utcnow
+    )
+
+    # ✅ RELACION CON CATEGORIA
+    categoria_id = db.Column(
+        db.Integer,
+        db.ForeignKey('categoria.id')
+    )
+
+    categoria = db.relationship(
+        'Categoria',
+        back_populates='productos'
+    )
+
+    # ✅ RELACION CON DETALLE VENTA
+    detalles = db.relationship(
+        'DetalleVenta',
+        back_populates='producto'
+    )
+
+
+# 🧾 VENTA
 class Venta(db.Model):
+
     id = db.Column(db.Integer, primary_key=True)
-    fecha = db.Column(db.DateTime)
 
-    usuario_id = db.Column(db.Integer, db.ForeignKey('usuario.id'))
-    detalles = db.relationship('DetalleVenta', back_populates='venta')
+    fecha = db.Column(
+        db.DateTime,
+        default=datetime.utcnow
+    )
 
+    usuario_id = db.Column(
+        db.Integer,
+        db.ForeignKey('usuario.id')
+    )
+
+    detalles = db.relationship(
+        'DetalleVenta',
+        back_populates='venta'
+    )
+
+
+# 📄 DETALLE VENTA
 class DetalleVenta(db.Model):
+
     id = db.Column(db.Integer, primary_key=True)
-    cantidad = db.Column(db.Integer)
-    subtotal = db.Column(db.Float)
 
-    venta_id = db.Column(db.Integer, db.ForeignKey('venta.id'))
-    producto_id = db.Column(db.Integer, db.ForeignKey('producto.id'))
+    cantidad = db.Column(
+        db.Integer,
+        nullable=False
+    )
 
-    venta = db.relationship('Venta', back_populates='detalles')
+    subtotal = db.Column(
+        db.Float,
+        nullable=False
+    )
+
+    venta_id = db.Column(
+        db.Integer,
+        db.ForeignKey('venta.id')
+    )
+
+    producto_id = db.Column(
+        db.Integer,
+        db.ForeignKey('producto.id')
+    )
+
+    venta = db.relationship(
+        'Venta',
+        back_populates='detalles'
+    )
+
+    producto = db.relationship(
+        'Producto',
+        back_populates='detalles'
+    )

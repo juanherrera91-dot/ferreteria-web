@@ -1,10 +1,8 @@
 from flask import Blueprint, render_template, request, redirect, session
 from .models import Usuario
-from .extensions import db
-from flask_bcrypt import Bcrypt
+from .extensions import db, bcrypt
 
 auth = Blueprint('auth', __name__)
-bcrypt = Bcrypt()
 
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
