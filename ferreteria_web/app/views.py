@@ -1,7 +1,12 @@
 from flask import Blueprint, render_template, request, redirect, session, flash
 from .models import db, Producto, Categoria, Venta, DetalleVenta, Usuario, Cliente
 from .decorators import login_required
+
+# 🔴 FIX IMPORTANTE: evita Tkinter en matplotlib
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+
 import base64
 from io import BytesIO
 from datetime import datetime
@@ -15,7 +20,6 @@ bp = Blueprint('bp', __name__)
 @bp.route('/')
 def home():
 
-    # VALIDAR SESIÓN
     if 'user_id' in session:
         return redirect('/dashboard')
 
@@ -34,9 +38,7 @@ def dashboard():
     categorias = Categoria.query.count()
     clientes = Cliente.query.count()
 
-    total_ventas = db.session.query(
-        db.func.sum(Venta.total)
-    ).scalar()
+    total_ventas = db.session.query(db.func.sum(Venta.total)).scalar()
 
     if not total_ventas:
         total_ventas = 0
@@ -46,6 +48,7 @@ def dashboard():
     nombres = [p.nombre for p in datos]
     stock = [p.stock for p in datos]
 
+    # 📊 GRÁFICA STOCK
     plt.figure(figsize=(8, 4))
     plt.bar(nombres, stock)
     plt.title("📦 Stock de Productos")
@@ -57,7 +60,7 @@ def dashboard():
 
     grafica = base64.b64encode(img.getvalue()).decode()
 
-    plt.close()
+    plt.close('all')
 
     return render_template(
         "index.html",
@@ -111,7 +114,6 @@ def add_producto():
     db.session.commit()
 
     flash("Producto agregado correctamente")
-
     return redirect('/productos')
 
 
@@ -136,7 +138,6 @@ def edit_producto(id):
     db.session.commit()
 
     flash("Producto actualizado")
-
     return redirect('/productos')
 
 
@@ -153,7 +154,6 @@ def delete_producto(id):
     db.session.commit()
 
     flash("Producto eliminado")
-
     return redirect('/productos')
 
 
@@ -190,7 +190,6 @@ def add_cliente():
     db.session.commit()
 
     flash("Cliente agregado")
-
     return redirect('/clientes')
 
 
@@ -207,7 +206,6 @@ def delete_cliente(id):
     db.session.commit()
 
     flash("Cliente eliminado")
-
     return redirect('/clientes')
 
 
@@ -218,13 +216,8 @@ def delete_cliente(id):
 @login_required
 def ventas():
 
-    data = Venta.query.order_by(
-        Venta.id.desc()
-    ).all()
-
-    clientes = Cliente.query.order_by(
-        Cliente.nombre.asc()
-    ).all()
+    data = Venta.query.order_by(Venta.id.desc()).all()
+    clientes = Cliente.query.all()
 
     return render_template(
         "venta.html",
@@ -243,12 +236,10 @@ def crear_venta():
     usuario_id = session.get('user_id')
     cliente_id = request.form.get('cliente_id')
 
-    # VALIDAR LOGIN
     if not usuario_id:
         flash("Usuario no autenticado")
         return redirect('/login')
 
-    # VALIDAR CLIENTE
     if not cliente_id:
         flash("Debes seleccionar un cliente")
         return redirect('/ventas')
@@ -264,7 +255,6 @@ def crear_venta():
     db.session.commit()
 
     flash("Venta creada correctamente")
-
     return redirect(f'/venta_detalle/{nueva.id}')
 
 
@@ -276,16 +266,11 @@ def crear_venta():
 def venta_detalle(id):
 
     venta = Venta.query.get_or_404(id)
-
     productos = Producto.query.all()
 
-    total = 0
-
-    for d in venta.detalles:
-        total += d.subtotal
+    total = sum(d.subtotal for d in venta.detalles)
 
     venta.total = total
-
     db.session.commit()
 
     return render_template(
@@ -303,49 +288,36 @@ def venta_detalle(id):
 @login_required
 def add_detalle(venta_id):
 
-    producto_id = request.form.get('producto_id')
-    cantidad = request.form.get('cantidad')
+    try:
+        producto_id = request.form.get('producto_id')
+        cantidad = int(request.form.get('cantidad'))
 
-    if not producto_id or not cantidad:
-        flash("Datos incompletos")
-        return redirect(f'/venta_detalle/{venta_id}')
+        producto = Producto.query.get_or_404(producto_id)
 
-    cantidad = int(cantidad)
+        if producto.stock < cantidad:
+            flash('Stock insuficiente', 'danger')
+            return redirect(f'/venta_detalle/{venta_id}')
 
-    if cantidad <= 0:
-        flash("Cantidad inválida")
-        return redirect(f'/venta_detalle/{venta_id}')
+        subtotal = producto.precio * cantidad
 
-    producto = Producto.query.get_or_404(producto_id)
+        detalle = DetalleVenta(
+            venta_id=venta_id,
+            producto_id=producto.id,
+            cantidad=cantidad,
+            precio_unitario=producto.precio,
+            subtotal=subtotal
+        )
 
-    if producto.stock < cantidad:
-        flash("Stock insuficiente")
-        return redirect(f'/venta_detalle/{venta_id}')
+        producto.stock -= cantidad
 
-    subtotal = producto.precio * cantidad
+        db.session.add(detalle)
+        db.session.commit()
 
-    detalle = DetalleVenta(
-        venta_id=venta_id,
-        producto_id=int(producto_id),
-        cantidad=cantidad,
-        precio_unitario=producto.precio,
-        subtotal=subtotal
-    )
+        flash('Producto agregado', 'success')
 
-    producto.stock -= cantidad
-
-    db.session.add(detalle)
-
-    venta = Venta.query.get(venta_id)
-
-    if venta.total:
-        venta.total += subtotal
-    else:
-        venta.total = subtotal
-
-    db.session.commit()
-
-    flash("Producto agregado a la venta")
+    except Exception as e:
+        db.session.rollback()
+        flash(str(e), 'danger')
 
     return redirect(f'/venta_detalle/{venta_id}')
 
@@ -359,12 +331,8 @@ def reporte():
 
     ventas = Venta.query.all()
 
-    fechas = []
-    totales = []
-
-    for v in ventas:
-        fechas.append(v.fecha.strftime('%d/%m'))
-        totales.append(v.total)
+    fechas = [v.fecha.strftime('%d/%m') for v in ventas]
+    totales = [v.total for v in ventas]
 
     plt.figure(figsize=(8, 4))
     plt.plot(fechas, totales, marker='o')
@@ -377,14 +345,10 @@ def reporte():
 
     grafica = base64.b64encode(img.getvalue()).decode()
 
-    plt.close()
+    plt.close('all')
 
-    total_general = db.session.query(
-        db.func.sum(Venta.total)
-    ).scalar()
-
-    if not total_general:
-        total_general = 0
+    total_general = db.session.query(db.func.sum(Venta.total)).scalar()
+    total_general = total_general or 0
 
     return render_template(
         "reporte.html",
