@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <h2 class="fw-bold mb-4">
+        📊 Reportes Inteligentes IA
+    </h2>
+
+    <div class="row g-3">
+
+        <div class="col-md-3">
+            <div class="card bg-primary text-white shadow">
+                <div class="card-body">
+                    <h5>Productos</h5>
+                    <h2>{{ total_productos }}</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-success text-white shadow">
+                <div class="card-body">
+                    <h5>Clientes</h5>
+                    <h2>{{ total_clientes }}</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-warning shadow">
+                <div class="card-body">
+                    <h5>Ventas</h5>
+                    <h2>{{ total_ventas }}</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-danger text-white shadow">
+                <div class="card-body">
+                    <h5>Ingresos</h5>
+                    <h2>Bs {{ ingresos }}</h2>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="card shadow mt-4">
+
+        <div class="card-header bg-dark text-white">
+            🤖 Análisis Inteligente
+        </div>
+
+        <div class="card-body">
+
+            <h5>
+                🔥 Producto más vendido:
+                <strong>{{ producto_top }}</strong>
+            </h5>
+
+            <hr>
+
+            <p style="white-space: pre-line;">
+                {{ analisis }}
+            </p>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

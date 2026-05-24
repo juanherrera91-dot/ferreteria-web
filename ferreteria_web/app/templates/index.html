@@ -1,40 +1,51 @@
-<!DOCTYPE html>
 {% extends "base.html" %}
 
 {% block content %}
 
 <div class="container mt-4">
 
-   
+    <!-- TÍTULO -->
     <div class="mb-4">
         <h1 class="fw-bold">🏪 FERRETERÍA FERROTODO</h1>
         <p class="text-muted">Panel de control del sistema</p>
     </div>
 
-    
+    <!-- CARDS -->
     <div class="row mt-4 g-3">
 
-        <div class="col-md-4">
-            <div class="card shadow border-0 bg-primary text-white p-3">
+        <!-- PRODUCTOS -->
+        <div class="col-md-3">
+            <div class="card shadow border-0 bg-primary text-white p-3 h-100">
                 <h5>📦 Productos</h5>
                 <h2>{{ productos }}</h2>
                 <small>Total registrados</small>
             </div>
         </div>
 
-        <div class="col-md-4">
-            <div class="card shadow border-0 bg-success text-white p-3">
+        <!-- VENTAS -->
+        <div class="col-md-3">
+            <div class="card shadow border-0 bg-success text-white p-3 h-100">
                 <h5>🧾 Ventas</h5>
                 <h2>{{ ventas }}</h2>
                 <small>Ventas realizadas</small>
             </div>
         </div>
 
-        <div class="col-md-4">
-            <div class="card shadow border-0 bg-warning text-dark p-3">
+        <!-- CATEGORÍAS -->
+        <div class="col-md-3">
+            <div class="card shadow border-0 bg-warning text-dark p-3 h-100">
                 <h5>📁 Categorías</h5>
                 <h2>{{ categorias }}</h2>
                 <small>Categorías activas</small>
+            </div>
+        </div>
+
+        <!-- CLIENTES -->
+        <div class="col-md-3">
+            <div class="card shadow border-0 bg-info text-white p-3 h-100">
+                <h5>👥 Clientes</h5>
+                <h2>{{ clientes }}</h2>
+                <small>Clientes registrados</small>
             </div>
         </div>
 
@@ -42,9 +53,11 @@
 
     <!-- GRÁFICA -->
     <div class="row mt-5">
+
         <div class="col-md-12">
 
             <div class="card shadow border-0">
+
                 <div class="card-header bg-dark text-white">
                     📊 Estadísticas de Productos en Stock
                 </div>
@@ -52,17 +65,27 @@
                 <div class="card-body text-center">
 
                     {% if grafica %}
-                        <img src="data:image/png;base64,{{ grafica }}"
-                             class="img-fluid rounded"
-                             style="max-height: 400px;">
+
+                        <img
+                            src="data:image/png;base64,{{ grafica }}"
+                            class="img-fluid rounded"
+                            style="max-height: 400px;"
+                        >
+
                     {% else %}
-                        <p class="text-muted">No hay datos para mostrar gráfica</p>
+
+                        <p class="text-muted">
+                            No hay datos para mostrar gráfica
+                        </p>
+
                     {% endif %}
 
                 </div>
+
             </div>
 
         </div>
+
     </div>
 
 </div>

@@ -1,85 +1,136 @@
-<!DOCTYPE html>
 {% extends "base.html" %}
 
 {% block content %}
 
 <div class="container mt-4">
 
-    <h3>🧾 Venta #{{ venta.id }}</h3>
-
-    <!-- FORMULARIO AGREGAR PRODUCTO -->
-    <div class="card shadow mb-3">
-        <div class="card-body">
-
-            <form method="POST" action="/add_detalle/{{ venta.id }}" class="row g-2">
-
-                <div class="col-md-6">
-                    <label class="form-label">Producto</label>
-                    <select name="producto_id" class="form-select" required>
-                        {% for p in productos %}
-                        <option value="{{ p.id }}">
-                            {{ p.nombre }} (Stock: {{ p.stock }})
-                        </option>
-                        {% endfor %}
-                    </select>
+    <!-- MENSAJES FLASH DE NOTIFICACIONES -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
 
-                <div class="col-md-3">
-                    <label class="form-label">Cantidad</label>
-                    <input type="number" name="cantidad" class="form-control" required>
-                </div>
-
-                <div class="col-md-3 d-flex align-items-end">
-                    <button class="btn btn-success w-100">
-                        ➕ Agregar
-                    </button>
-                </div>
-
-            </form>
-
+    <!-- ENCABEZADO DE LA NOTA DE VENTA -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-primary">🛒 Nota de Venta #{{ venta.id }}</h2>
+            <p class="text-muted mb-0">
+                <strong>Cliente:</strong> {{ venta.cliente.nombre }} | 
+                <strong>Fecha:</strong> {{ venta.fecha.strftime('%d/%m/%Y %H:%M') }}
+            </p>
+        </div>
+        <div>
+            <a href="{{ url_for('views.ventas') }}" class="btn btn-secondary">
+                ⬅ Volver al Historial
+            </a>
         </div>
     </div>
 
-    <!-- TABLA DETALLE -->
-    <div class="card shadow">
-        <div class="card-body">
+    <div class="row g-4">
+        
+        <!-- ===================================== -->
+        <!-- 🔧 FORMULARIO AÑADIR ARTÍCULO -->
+        <!-- ===================================== -->
+        <div class="col-md-4">
+            <div class="card shadow border-0 rounded-4">
+                <div class="card-header bg-dark text-white fw-bold">
+                    ➕ Añadir Producto a la Nota
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('views.add_detalle', venta_id=venta.id) }}" method="POST">
+                        
+                        <!-- SELECCIÓN DE PRODUCTO -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Seleccionar Artículo</label>
+                            <select name="producto_id" class="form-select" required>
+                                <option value="">-- Buscar Producto --</option>
+                                {% for p in productos %}
+                                    {% if p.stock > 0 %}
+                                        <option value="{{ p.id }}">
+                                            {{ p.nombre }} (Bs. {{ '%.2f'|format(p.precio) }}) - [Disponibles: {{ p.stock }}]
+                                        </option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
 
-            <table class="table table-hover">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Producto</th>
-                        <th>Cantidad</th>
-                        <th>Subtotal</th>
-                        <th>Acción</th>
-                    </tr>
-                </thead>
+                        <!-- CANTIDAD -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Cantidad Requerida</label>
+                            <input type="number" name="cantidad" class="form-control" min="1" value="1" required>
+                        </div>
 
-                <tbody>
-                    {% set total = namespace(value=0) %}
+                        <!-- BOTÓN ENVIAR -->
+                        <button type="submit" class="btn btn-success w-100 fw-bold">
+                            📥 Insertar al Carrito
+                        </button>
 
-                    {% for d in venta.detalles %}
-                    <tr>
-                        <td>{{ d.producto.nombre }}</td>
-                        <td>{{ d.cantidad }}</td>
-                        <td>Bs {{ d.subtotal }}</td>
-                        <td>
-                            <a href="/delete_detalle/{{ d.id }}/{{ venta.id }}"
-                               class="btn btn-danger btn-sm">
-                                🗑
-                            </a>
-                        </td>
-                    </tr>
-
-                    {% set total.value = total.value + d.subtotal %}
-                    {% endfor %}
-                </tbody>
-            </table>
-
-            <div class="text-end">
-                <h4>Total: <span class="text-success">Bs {{ total.value }}</span></h4>
+                    </form>
+                </div>
             </div>
-
         </div>
+
+        <!-- ===================================== -->
+        <!-- 📄 DETALLE GENERAL / CARRITO -->
+        <!-- ===================================== -->
+        <div class="col-md-8">
+            <div class="card shadow border-0 rounded-4">
+                <div class="card-header bg-primary text-white fw-bold">
+                    📋 Artículos en la Nota Actual
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Producto</th>
+                                    <th width="100" class="text-center">Cantidad</th>
+                                    <th width="120" class="text-end">Precio Unitario</th>
+                                    <th width="120" class="text-end">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if venta.detalles %}
+                                    {% for d in venta.detalles %}
+                                    <tr>
+                                        <td class="fw-bold">{{ d.producto.nombre }}</td>
+                                        <td class="text-center">
+                                            <span class="badge bg-secondary fs-6">{{ d.cantidad }}</span>
+                                        </td>
+                                        <td class="text-end">Bs. {{ '%.2f'|format(d.precio_unitario) }}</td>
+                                        <td class="text-end fw-bold text-success">
+                                            Bs. {{ '%.2f'|format(d.subtotal) }}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                    
+                                    <!-- FILA TOTAL GENERAL -->
+                                    <tr class="table-dark fs-5">
+                                        <td colspan="3" class="text-end fw-bold">TOTAL GENERAL:</td>
+                                        <td class="text-end fw-bold text-warning">
+                                            Bs. {{ '%.2f'|format(total) }}
+                                        </td>
+                                    </tr>
+                                {% else %}
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted py-4">
+                                            No se han añadido productos a esta nota de venta todavía.
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
 </div>

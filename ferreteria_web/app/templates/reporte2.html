@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <h2 class="fw-bold mb-4">
+        📈 Reporte 2 — Tendencias y Comportamiento
+    </h2>
+
+    <div class="card shadow">
+
+        <div class="card-header bg-dark text-white">
+            👥 Clientes Frecuentes
+        </div>
+
+        <div class="card-body text-center">
+
+            <img
+                src="data:image/png;base64,{{ grafica }}"
+                class="img-fluid">
+
+        </div>
+
+    </div>
+
+    <div class="card shadow mt-4">
+
+        <div class="card-header bg-success text-white">
+            🤖 Interpretación IA
+        </div>
+
+        <div class="card-body">
+
+            <p style="white-space: pre-line;">
+                {{ interpretacion }}
+            </p>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

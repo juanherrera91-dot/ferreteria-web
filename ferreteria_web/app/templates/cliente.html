@@ -1,93 +1,158 @@
-<!DOCTYPE html>
 {% extends "base.html" %}
 
 {% block content %}
 
-<div class="container mt-4">
+<div class="container-fluid mt-4">
 
-    <h2 class="fw-bold">
-        👤 Clientes
-    </h2>
-
-    <div class="card shadow p-4 mb-4">
-
-        <form method="POST" action="/add_cliente">
-
-            <div class="row">
-
-                <div class="col-md-4">
-                    <input class="form-control"
-                           name="nombre"
-                           placeholder="Nombre"
-                           required>
+    <!-- MENSAJES FLASH DE FLASK -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
 
-                <div class="col-md-4">
-                    <input class="form-control"
-                           name="telefono"
-                           placeholder="Teléfono">
-                </div>
-
-                <div class="col-md-4">
-                    <input class="form-control"
-                           name="direccion"
-                           placeholder="Dirección">
-                </div>
-
-            </div>
-
-            <button class="btn btn-success mt-3">
-                ➕ Guardar Cliente
-            </button>
-
-        </form>
-
+    <!-- TITULO -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold">👥 Gestión de Clientes</h2>
+            <p class="text-muted">Administración de clientes de la ferretería</p>
+        </div>
+        <div>
+            <span class="badge bg-primary fs-6">
+                Total Clientes: {{ clientes|length }}
+            </span>
+        </div>
     </div>
 
-    <table class="table table-bordered table-hover">
+    <!-- FORMULARIO DINÁMICO (AGREGAR / EDITAR) -->
+    <div class="card shadow border-0 mb-4">
+        <div class="card-header bg-dark text-white fw-bold" id="form-title">
+            ➕ Registrar Nuevo Cliente
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('views.add_cliente') }}" id="client-form">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Nombre Completo</label>
+                        <input class="form-control" name="nombre" id="form-nombre" placeholder="Nombre del cliente" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">CI / NIT</label>
+                        <input class="form-control" name="ci_nit" id="form-ci-nit" placeholder="Documento de identidad">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">Teléfono</label>
+                        <input class="form-control" name="telefono" id="form-telefono" placeholder="Nro de celular">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Dirección</label>
+                        <input class="form-control" name="direccion" id="form-direccion" placeholder="Zona o calle">
+                    </div>
+                    <div class="col-md-2 d-flex gap-2 align-items-end">
+                        <button type="submit" class="btn btn-success w-100" id="submit-btn">
+                            ➕ Guardar
+                        </button>
+                        <button type="button" class="btn btn-secondary d-none" id="cancel-btn" onclick="resetForm()">
+                            ✖
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
 
-        <thead class="table-dark">
+    <!-- TABLA DE REGISTROS -->
+    <div class="card shadow border-0">
+        <div class="card-header bg-primary text-white fw-bold">
+            📋 Lista de Clientes Registrados
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Cliente</th>
+                            <th>CI / NIT</th>
+                            <th>Teléfono</th>
+                            <th>Dirección</th>
+                            <th width="180">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if clientes %}
+                            {% for c in clientes %}
+                            <tr>
+                                <td><span class="badge bg-secondary">{{ c.id }}</span></td>
+                                <td class="fw-bold">{{ c.nombre }}</td>
+                                <td>{{ c.ci_nit if c.ci_nit else '' }}</td>
+                                <td>{{ c.telefono if c.telefono else '' }}</td>
+                                <td>{{ c.direccion if c.direccion else '' }}</td>
+                                <td>
+                                    <!-- BOTÓN EDITAR EN FORMULARIO SUPERIOR -->
+                                    <button type="button" class="btn btn-warning btn-sm" 
+                                        onclick="llenarFormulario('{{ c.id }}', '{{ c.nombre }}', '{{ c.ci_nit if c.ci_nit else '' }}', '{{ c.telefono if c.telefono else '' }}', '{{ c.direccion if c.direccion else '' }}')">
+                                        ✏ Editar
+                                    </button>
 
-            <tr>
-                <th>ID</th>
-                <th>Nombre</th>
-                <th>Teléfono</th>
-                <th>Dirección</th>
-                <th>Acciones</th>
-            </tr>
-
-        </thead>
-
-        <tbody>
-
-            {% for c in clientes %}
-
-            <tr>
-
-                <td>{{ c.id }}</td>
-                <td>{{ c.nombre }}</td>
-                <td>{{ c.telefono }}</td>
-                <td>{{ c.direccion }}</td>
-
-                <td>
-
-                    <a href="/delete_cliente/{{ c.id }}"
-                       class="btn btn-danger btn-sm">
-
-                        🗑 Eliminar
-
-                    </a>
-
-                </td>
-
-            </tr>
-
-            {% endfor %}
-
-        </tbody>
-
-    </table>
-
+                                    <!-- BOTÓN ELIMINAR SEGURO -->
+                                    <form action="{{ url_for('views.eliminar_cliente', id=c.id) }}" method="POST" style="display:inline;">
+                                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('¿Estás seguro de que deseas eliminar este cliente?');">
+                                            🗑️ Eliminar
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">No existen clientes registrados</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 
-{% endblock %}
+<!-- SCRIPT DE INTERACCIÓN INTERNA -->
+<script>
+function llenarFormulario(id, nombre, ciNit, telefono, direccion) {
+    document.getElementById('form-nombre').value = nombre;
+    document.getElementById('form-ci-nit').value = ciNit;
+    document.getElementById('form-telefono').value = telefono;
+    document.getElementById('form-direccion').value = direccion;
+
+    // Modificar el destino del envío hacia la ruta de edición en views.py
+    document.getElementById('client-form').action = "/editar_cliente/" + id;
+
+    // Cambios estéticos visuales
+    document.getElementById('form-title').innerHTML = "✏ Editar Datos de Cliente (ID: " + id + ")";
+    document.getElementById('form-title').className = "card-header bg-warning text-dark fw-bold";
+    document.getElementById('submit-btn').innerHTML = "💾 Actualizar";
+    document.getElementById('submit-btn').className = "btn btn-warning w-100";
+    
+    document.getElementById('cancel-btn').classList.remove('d-none');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function resetForm() {
+    document.getElementById('client-form').reset();
+    document.getElementById('client-form').action = "{{ url_for('views.add_cliente') }}";
+    
+    document.getElementById('form-title').innerHTML = "➕ Registrar Nuevo Cliente";
+    document.getElementById('form-title').className = "card-header bg-dark text-white fw-bold";
+    document.getElementById('submit-btn').innerHTML = "➕ Guardar";
+    document.getElementById('submit-btn').className = "btn btn-success w-100";
+    
+    document.getElementById('cancel-btn').classList.add('d-none');
+}
+</script>
+
+{% endblock %}python 

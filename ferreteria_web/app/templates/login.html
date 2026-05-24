@@ -1,3 +1,6 @@
+<!DOCTYPE html>
+<html lang="es">
+
 <head>
 
     <meta charset="UTF-8">
@@ -30,82 +33,54 @@
         }
 
         .login-card {
-
             width: 400px;
-
             border: none;
-
             border-radius: 20px;
-
             padding: 30px;
-
             background: white;
-
             box-shadow: 0px 10px 30px rgba(0,0,0,0.3);
         }
 
         .logo {
-
             font-size: 50px;
-
             text-align: center;
-
             margin-bottom: 10px;
         }
 
         .title {
-
             text-align: center;
-
             font-weight: bold;
-
             color: #0f172a;
         }
 
         .subtitle {
-
             text-align: center;
-
             color: gray;
-
             margin-bottom: 25px;
         }
 
         .form-control {
-
             border-radius: 10px;
-
             height: 45px;
         }
 
         .btn-login {
-
             background: #2563eb;
-
             border: none;
-
             border-radius: 10px;
-
             height: 45px;
-
             font-weight: bold;
-
             transition: 0.3s;
         }
 
         .btn-login:hover {
-
             background: #1d4ed8;
         }
 
         .footer {
-
             text-align: center;
-
             margin-top: 20px;
-
             color: gray;
-
             font-size: 12px;
         }
 
@@ -130,33 +105,39 @@
             Sistema de Gestión Ferretería
         </p>
 
-
         <!-- MENSAJES FLASH -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
+       <!-- ALERTA FLOTANTE -->
+{% with messages = get_flashed_messages(with_categories=true) %}
 
-            {% if messages %}
+    {% if messages %}
 
-                {% for category, message in messages %}
+        <div class="alert-container">
 
-                    <div class="alert alert-{{ category }} alert-dismissible fade show">
+            {% for category, message in messages %}
 
-                        {{ message }}
+                <div
+                    class="alert alert-{{ category }} alert-dismissible fade show floating-alert"
+                    role="alert">
 
-                        <button
-                            type="button"
-                            class="btn-close"
-                            data-bs-dismiss="alert">
-                        </button>
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
 
-                    </div>
+                    {{ message }}
 
-                {% endfor %}
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="alert">
+                    </button>
 
-            {% endif %}
+                </div>
 
-        {% endwith %}
+            {% endfor %}
 
+        </div>
 
+    {% endif %}
+
+{% endwith %}
         <!-- FORMULARIO -->
         <form method="POST">
 
@@ -185,7 +166,6 @@
 
             </div>
 
-
             <!-- PASSWORD -->
             <div class="mb-3">
 
@@ -211,7 +191,6 @@
 
             </div>
 
-
             <!-- BOTON -->
             <button type="submit" class="btn btn-primary btn-login w-100">
 
@@ -223,16 +202,12 @@
 
         </form>
 
-
         <!-- FOOTER -->
         <div class="footer">
-
             Sistema SISFERR © 2026
-
         </div>
 
     </div>
-
 
     <!-- BOOTSTRAP JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

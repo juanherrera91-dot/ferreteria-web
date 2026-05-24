@@ -3,10 +3,9 @@ from datetime import datetime
 from flask_login import UserMixin
 
 
-# ==========================================
-# USUARIO
-# ==========================================
-
+# ==================================================
+# 👤 USUARIO
+# ==================================================
 class Usuario(UserMixin, db.Model):
 
     __tablename__ = 'usuario'
@@ -38,10 +37,9 @@ class Usuario(UserMixin, db.Model):
         return f'<Usuario {self.username}>'
 
 
-# ==========================================
-# CLIENTE
-# ==========================================
-
+# ==================================================
+# 👥 CLIENTE
+# ==================================================
 class Cliente(db.Model):
 
     __tablename__ = 'cliente'
@@ -56,17 +54,17 @@ class Cliente(db.Model):
         nullable=False
     )
 
+    ci_nit = db.Column(
+        db.String(50),
+        unique=True
+    )
+
     telefono = db.Column(
         db.String(30)
     )
 
     direccion = db.Column(
         db.String(200)
-    )
-
-    ci_nit = db.Column(
-        db.String(50),
-        unique=True
     )
 
     fecha_registro = db.Column(
@@ -80,11 +78,14 @@ class Cliente(db.Model):
         cascade='all, delete-orphan'
     )
 
+    def __repr__(self):
 
-# ==========================================
-# CATEGORIA
-# ==========================================
+        return f'<Cliente {self.nombre}>'
 
+
+# ==================================================
+# 📦 CATEGORÍA
+# ==================================================
 class Categoria(db.Model):
 
     __tablename__ = 'categoria'
@@ -106,11 +107,14 @@ class Categoria(db.Model):
         cascade='all, delete-orphan'
     )
 
+    def __repr__(self):
 
-# ==========================================
-# PRODUCTO
-# ==========================================
+        return f'<Categoria {self.nombre}>'
 
+
+# ==================================================
+# 🔧 PRODUCTO
+# ==================================================
 class Producto(db.Model):
 
     __tablename__ = 'producto'
@@ -159,11 +163,14 @@ class Producto(db.Model):
         cascade='all, delete-orphan'
     )
 
+    def __repr__(self):
 
-# ==========================================
-# VENTA
-# ==========================================
+        return f'<Producto {self.nombre}>'
 
+
+# ==================================================
+# 💰 VENTA
+# ==================================================
 class Venta(db.Model):
 
     __tablename__ = 'venta'
@@ -212,11 +219,14 @@ class Venta(db.Model):
         cascade='all, delete-orphan'
     )
 
+    def __repr__(self):
 
-# ==========================================
-# DETALLE VENTA
-# ==========================================
+        return f'<Venta {self.id}>'
 
+
+# ==================================================
+# 🛒 DETALLE VENTA
+# ==================================================
 class DetalleVenta(db.Model):
 
     __tablename__ = 'detalle_venta'
@@ -224,6 +234,18 @@ class DetalleVenta(db.Model):
     id = db.Column(
         db.Integer,
         primary_key=True
+    )
+
+    venta_id = db.Column(
+        db.Integer,
+        db.ForeignKey('venta.id'),
+        nullable=False
+    )
+
+    producto_id = db.Column(
+        db.Integer,
+        db.ForeignKey('producto.id'),
+        nullable=False
     )
 
     cantidad = db.Column(
@@ -241,18 +263,6 @@ class DetalleVenta(db.Model):
         nullable=False
     )
 
-    venta_id = db.Column(
-        db.Integer,
-        db.ForeignKey('venta.id'),
-        nullable=False
-    )
-
-    producto_id = db.Column(
-        db.Integer,
-        db.ForeignKey('producto.id'),
-        nullable=False
-    )
-
     venta = db.relationship(
         'Venta',
         back_populates='detalles'
@@ -262,3 +272,7 @@ class DetalleVenta(db.Model):
         'Producto',
         back_populates='detalles'
     )
+
+    def __repr__(self):
+
+        return f'<DetalleVenta {self.id}>'
