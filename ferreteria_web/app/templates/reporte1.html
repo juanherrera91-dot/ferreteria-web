@@ -1,80 +1,171 @@
+<!DOCTYPE html>
 {% extends "base.html" %}
-
 {% block content %}
 
 <div class="container mt-4">
 
-    <h2 class="fw-bold mb-4">
-        📊 Reporte 1 — Análisis General
-    </h2>
+    <!-- TÍTULO -->
+    <div class="mb-4">
+        <h2 class="fw-bold">
+            📊 Reporte 1 — Análisis General del Sistema
+        </h2>
 
-    <div class="row g-3">
+        <p class="text-muted">
+            Estadísticas generales y análisis inteligente de ventas diarias
+        </p>
+    </div>
+
+    <!-- TARJETAS -->
+    <div class="row g-4">
 
         <div class="col-md-3">
-            <div class="card bg-primary text-white shadow">
-                <div class="card-body">
-                    <h5>Total Ventas</h5>
-                    <h2>{{ total_ventas }}</h2>
+            <div class="card shadow border-0 bg-primary text-white h-100">
+                <div class="card-body text-center">
+
+                    <h5 class="fw-bold">
+                        💰 Total Ventas
+                    </h5>
+
+                    <h2 class="display-6">
+                        {{ total_ventas }}
+                    </h2>
+
+                    <small>
+                        Ventas registradas
+                    </small>
+
                 </div>
             </div>
         </div>
 
         <div class="col-md-3">
-            <div class="card bg-success text-white shadow">
-                <div class="card-body">
-                    <h5>Productos</h5>
-                    <h2>{{ total_productos }}</h2>
+            <div class="card shadow border-0 bg-success text-white h-100">
+                <div class="card-body text-center">
+
+                    <h5 class="fw-bold">
+                        📦 Productos
+                    </h5>
+
+                    <h2 class="display-6">
+                        {{ total_productos }}
+                    </h2>
+
+                    <small>
+                        Productos disponibles
+                    </small>
+
                 </div>
             </div>
         </div>
 
         <div class="col-md-3">
-            <div class="card bg-warning shadow">
-                <div class="card-body">
-                    <h5>Clientes</h5>
-                    <h2>{{ total_clientes }}</h2>
+            <div class="card shadow border-0 bg-warning text-dark h-100">
+                <div class="card-body text-center">
+
+                    <h5 class="fw-bold">
+                        👥 Clientes
+                    </h5>
+
+                    <h2 class="display-6">
+                        {{ total_clientes }}
+                    </h2>
+
+                    <small>
+                        Clientes registrados
+                    </small>
+
                 </div>
             </div>
         </div>
 
         <div class="col-md-3">
-            <div class="card bg-danger text-white shadow">
-                <div class="card-body">
-                    <h5>Ingresos</h5>
-                    <h2>Bs {{ ingresos }}</h2>
+            <div class="card shadow border-0 bg-danger text-white h-100">
+                <div class="card-body text-center">
+
+                    <h5 class="fw-bold">
+                        💵 Ingresos
+                    </h5>
+
+                    <h2 class="display-6">
+                        Bs {{ ingresos }}
+                    </h2>
+
+                    <small>
+                        Ingresos totales
+                    </small>
+
                 </div>
             </div>
         </div>
 
     </div>
 
-    <div class="card shadow mt-4">
+    <!-- GRÁFICA -->
+    <div class="card shadow border-0 mt-5">
 
-        <div class="card-header bg-dark text-white">
-            📈 Gráfica Principal
+        <div class="card-header bg-dark text-white fw-bold">
+
+            📈 Ventas por Día
+
         </div>
 
         <div class="card-body text-center">
 
-            <img
-                src="data:image/png;base64,{{ grafica }}"
-                class="img-fluid">
+            {% if grafica %}
+
+                <img
+                    src="data:image/png;base64,{{ grafica }}"
+                    class="img-fluid rounded"
+                    style="max-height: 500px;">
+
+            {% else %}
+
+                <div class="alert alert-warning">
+
+                    No existen datos suficientes para generar la gráfica.
+
+                </div>
+
+            {% endif %}
 
         </div>
 
     </div>
 
-    <div class="card shadow mt-4">
+    <!-- ANALISIS IA -->
+    <div class="card shadow border-0 mt-5">
 
-        <div class="card-header bg-primary text-white">
-            🤖 Análisis IA
+        <div class="card-header bg-primary text-white fw-bold">
+
+            🤖 Análisis Automático con IA
+
         </div>
 
         <div class="card-body">
 
-            <p style="white-space: pre-line;">
-                {{ analisis }}
-            </p>
+            {% if analisis %}
+
+                <div class="p-3 bg-light rounded">
+
+                    <p
+                        class="mb-0"
+                        style="white-space: pre-line; font-size: 16px; line-height: 1.7;">
+
+                      {{ analisis|safe }}
+
+                    </p>
+
+                </div>
+
+            {% else %}
+
+                <div class="alert alert-info">
+
+                    No existe análisis disponible.
+
+                </div>
+
+            {% endif %}
 
         </div>
 

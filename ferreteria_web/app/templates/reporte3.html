@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 {% extends "base.html" %}
 
 {% block content %}
@@ -92,21 +93,21 @@
 
     </div>
 
-    <div class="card shadow mt-4">
+   <div class="card shadow mt-4">
 
-        <div class="card-header bg-primary text-white">
-            🤖 Recomendaciones Generadas
-        </div>
+    <div class="card-header bg-dark text-white">
+        🤖 Predicción Inteligente IA
+    </div>
 
-        <div class="card-body">
+    <div class="card-body text-center">
 
-            <p style="white-space: pre-line;">
-                {{ recomendaciones }}
-            </p>
-
-        </div>
+        <img
+            src="data:image/png;base64,{{ grafica }}"
+            class="img-fluid">
 
     </div>
+
+</div>
 
 </div>
 

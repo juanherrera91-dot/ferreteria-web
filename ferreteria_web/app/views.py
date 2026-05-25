@@ -1,16 +1,11 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash
 
-from flask_login import (
-    login_user,
-    logout_user,
-    login_required,
-    current_user
-)
+from flask_login import ( login_user,logout_user,login_required, current_user)
 
 from datetime import datetime
 
-from werkzeug.security import check_password_hash
-
+import numpy as np
+from sklearn.linear_model import LinearRegression 
 # ==========================================
 # MATPLOTLIB
 # ==========================================
@@ -26,7 +21,7 @@ from io import BytesIO
 # ==========================================
 # BASE DE DATOS
 # ==========================================
-from .database import db
+from .database import db, bcrypt
 
 # ==========================================
 # MODELOS
@@ -67,35 +62,45 @@ def home():
 def login():
 
     if current_user.is_authenticated:
+
         return redirect(
             url_for('views.dashboard')
         )
 
     if request.method == 'POST':
 
-        username = request.form.get('username')
+        username = request.form.get(
+            'username'
+        )
 
-        password = request.form.get('password')
+        password = request.form.get(
+            'password'
+        )
 
         user = Usuario.query.filter_by(
             username=username
         ).first()
 
-        if user and check_password_hash(
-            user.password,
-            password
-        ):
+        # ==================================
+        # VALIDAR USUARIO
+        # ==================================
+        if user:
 
-            login_user(user)
+            if bcrypt.check_password_hash(
+                user.password,
+                password
+            ):
 
-            flash(
-                '¡Bienvenido al sistema!',
-                'success'
-            )
+                login_user(user)
 
-            return redirect(
-                url_for('views.dashboard')
-            )
+                flash(
+                    '¡Bienvenido al sistema!',
+                    'success'
+                )
+
+                return redirect(
+                    url_for('views.dashboard')
+                )
 
         flash(
             'Usuario o contraseña incorrecta',
@@ -809,220 +814,245 @@ def add_detalle(venta_id):
             id=venta_id
         )
     )
-    # ==========================================
+  # ==========================================
 # REPORTES IA
 # ==========================================
+
 @bp.route('/reportes')
 @login_required
 def reportes():
 
-    # =========================
-    # MÉTRICAS GENERALES
-    # =========================
-    total_productos = Producto.query.count()
-
-    total_clientes = Cliente.query.count()
-
-    total_ventas = Venta.query.count()
-
-    # =========================
-    # TOTAL INGRESOS
-    # =========================
-    ventas_lista = Venta.query.all()
-
-    ingresos = 0
-
-    for venta in ventas_lista:
-        ingresos += venta.total
-
-    # =========================
-    # PRODUCTO MÁS VENDIDO
-    # =========================
-    detalles = DetalleVenta.query.all()
-
-    contador = {}
-
-    for detalle in detalles:
-
-        nombre = detalle.producto.nombre
-
-        if nombre in contador:
-            contador[nombre] += detalle.cantidad
-        else:
-            contador[nombre] = detalle.cantidad
-
-    producto_top = "Sin ventas"
-
-    if contador:
-        producto_top = max(
-            contador,
-            key=contador.get
-        )
-
-    # =========================
-    # ANÁLISIS IA SIMPLE
-    # =========================
-    analisis = f"""
-    El sistema registra {total_ventas} ventas realizadas,
-    con un ingreso total de Bs. {ingresos:.2f}.
-
-    Actualmente existen {total_productos} productos registrados
-    y {total_clientes} clientes almacenados.
-
-    El producto más vendido es:
-    {producto_top}.
-
-    Recomendación IA:
-    Mantener stock suficiente del producto más vendido
-    y aplicar promociones en productos con baja salida.
-    """
-
-    # =========================
-    # ENVIAR TEMPLATE
-    # =========================
     return render_template(
-        'reportes.html',
-        total_productos=total_productos,
-        total_clientes=total_clientes,
-        total_ventas=total_ventas,
-        ingresos=ingresos,
-        producto_top=producto_top,
-        analisis=analisis
+        'reportes.html'
     )
-    # ==========================================
+
+# ==========================================
 # REPORTE 1
-# ANALISIS GENERAL DEL SISTEMA
+# ANALISIS GENERAL
+# VENTAS POR DIA
 # ==========================================
 @bp.route('/reporte1')
 @login_required
 def reporte1():
 
-    import matplotlib.pyplot as plt
-    import base64
+    from sqlalchemy import func
 
-    from io import BytesIO
-    from collections import defaultdict
-
-    # ======================================
-    # MÉTRICAS GENERALES
-    # ======================================
+    # ==============================
+    # METRICAS
+    # ==============================
     total_ventas = Venta.query.count()
 
     total_productos = Producto.query.count()
 
     total_clientes = Cliente.query.count()
 
-    ingresos = 0
+    ingresos = db.session.query(
+        func.sum(Venta.total)
+    ).scalar()
 
-    for venta in Venta.query.all():
-        ingresos += venta.total
+    if ingresos is None:
+        ingresos = 0
 
-    # ======================================
-    # VENTAS POR MES
-    # ======================================
-    meses = defaultdict(float)
+    # ==============================
+    # VENTAS POR DIA
+    # ==============================
+    ventas_por_dia = db.session.query(
 
-    ventas = Venta.query.all()
+        func.date(Venta.fecha),
 
-    for venta in ventas:
+        func.sum(Venta.total)
 
-        mes = venta.fecha.strftime('%B')
+    ).group_by(
 
-        meses[mes] += venta.total
+        func.date(Venta.fecha)
 
-    nombres = list(meses.keys())
+    ).all()
 
-    valores = list(meses.values())
+    dias = []
 
-    # ======================================
-    # GRAFICA LINEAL
-    # ======================================
+    montos = []
+
+    for dia, total in ventas_por_dia:
+
+        dias.append(
+            dia.strftime('%d/%m/%Y')
+        )
+
+        montos.append(
+            float(total)
+        )
+
+    # ==============================
+    # GRAFICA
+    # ==============================
     grafica = None
 
-    if nombres and valores:
+    if dias and montos:
 
-        plt.figure(figsize=(12, 5))
+        plt.figure(
+            figsize=(12, 6)
+        )
 
         plt.plot(
-            nombres,
-            valores,
+
+            dias,
+
+            montos,
+
             marker='o',
-            linewidth=3
+
+            linewidth=3,
+
+            color='#0d6efd'
         )
 
         plt.title(
-            'Ventas por Mes',
+            'Ventas por Dia',
             fontsize=18,
             fontweight='bold'
         )
 
-        plt.xlabel('Mes')
+        plt.xlabel(
+            'Fecha'
+        )
 
-        plt.ylabel('Ingresos')
+        plt.ylabel(
+            'Monto de Ventas'
+        )
 
-        plt.grid(True)
+        plt.grid(
+            True,
+            linestyle='--',
+            alpha=0.5
+        )
+
+        plt.xticks(
+            rotation=30
+        )
+
+        for i, valor in enumerate(montos):
+
+            plt.text(
+
+                i,
+
+                valor + 1,
+
+                f'Bs {valor:.0f}',
+
+                ha='center',
+
+                fontsize=9
+            )
 
         plt.tight_layout()
 
         buffer = BytesIO()
 
         plt.savefig(
+
             buffer,
-            format='png'
+
+            format='png',
+
+            bbox_inches='tight'
         )
 
         buffer.seek(0)
 
         grafica = base64.b64encode(
+
             buffer.getvalue()
+
         ).decode('utf-8')
 
         buffer.close()
 
         plt.close()
 
-    # ======================================
-    # IA
-    # ======================================
+    # ==============================
+    # ANALISIS IA AUTOMATICO
+    # ==============================
+
+    mayor_venta = 0
+
+    mejor_dia = "Sin registros"
+
+    if montos:
+
+        mayor_venta = max(montos)
+
+        indice = montos.index(mayor_venta)
+
+        mejor_dia = dias[indice]
+
+    promedio_ventas = 0
+
+    if total_ventas > 0:
+
+        promedio_ventas = ingresos / total_ventas
+
     analisis = f"""
-    El sistema registra actualmente
-    {total_ventas} ventas realizadas.
+    La IA analizó el comportamiento
+    diario de ventas registrado en el sistema.
 
-    Los ingresos generales alcanzan
-    Bs. {ingresos:.2f}.
+    Actualmente se registran {total_ventas} ventas,
+    con ingresos acumulados de Bs. {round(ingresos, 2)}.
 
-    Existen {total_productos} productos
-    y {total_clientes} clientes registrados.
+    El día con mayor rendimiento comercial fue:
+    {mejor_dia},
+    alcanzando ventas aproximadas de
+    Bs. {round(mayor_venta, 2)}.
 
-    Inteligencia Artificial detectó
-    que las ventas muestran un
-    comportamiento estable.
+    El promedio de ingresos por venta es de
+    Bs. {round(promedio_ventas, 2)}.
 
-    Se recomienda aumentar promociones
-    en meses de menor ingreso.
+    El análisis detecta variaciones en la demanda
+    durante determinados días, lo que evidencia
+    oportunidades estratégicas para incrementar
+    promociones y optimizar inventario.
+
+    Recomendaciones Inteligentes:
+
+    • Incrementar stock en fechas de mayor demanda.
+
+    • Aplicar promociones en días con menor actividad.
+
+    • Mantener monitoreo continuo del comportamiento
+      de ventas diarias.
+
+En conclusion IA
+
+    El sistema determina que el negocio presenta
+    movimiento comercial constante y potencial
+    de crecimiento mediante estrategias basadas
+    en análisis de ventas.
     """
 
     return render_template(
+
         'reporte1.html',
+
         total_ventas=total_ventas,
+
         total_productos=total_productos,
+
         total_clientes=total_clientes,
-        ingresos=ingresos,
+
+        ingresos=round(ingresos, 2),
+
         grafica=grafica,
+
         analisis=analisis
     )
-    # ==========================================
+# ==========================================
 # REPORTE 2
-# TENDENCIAS Y CLIENTES FRECUENTES
+# CLIENTES FRECUENTES
 # ==========================================
 @bp.route('/reporte2')
 @login_required
 def reporte2():
 
-    import matplotlib.pyplot as plt
-    import base64
-
-    from io import BytesIO
     from collections import defaultdict
 
     clientes = defaultdict(int)
@@ -1043,11 +1073,14 @@ def reporte2():
 
     if nombres and cantidades:
 
-        plt.figure(figsize=(12,5))
+        plt.figure(
+            figsize=(12, 5)
+        )
 
         plt.bar(
             nombres,
-            cantidades
+            cantidades,
+            color='#198754'
         )
 
         plt.title(
@@ -1056,11 +1089,17 @@ def reporte2():
             fontweight='bold'
         )
 
-        plt.xlabel('Clientes')
+        plt.xlabel(
+            'Clientes'
+        )
 
-        plt.ylabel('Compras')
+        plt.ylabel(
+            'Cantidad de Compras'
+        )
 
-        plt.xticks(rotation=20)
+        plt.xticks(
+            rotation=20
+        )
 
         plt.tight_layout()
 
@@ -1081,24 +1120,86 @@ def reporte2():
 
         plt.close()
 
-    interpretacion = """
-    La Inteligencia Artificial detectó
-    que existen clientes frecuentes
-    con alta recurrencia de compra.
+   # ======================================
+    # ANALISIS AUTOMATICO IA
+    # ======================================
 
-    Se recomienda aplicar descuentos
-    especiales y programas de fidelización.
+    cliente_top = "Sin registros"
 
-    Los clientes más constantes
-    generan mayor estabilidad económica.
+    max_compras = 0
+
+    total_clientes_frecuentes = 0
+
+    if clientes:
+
+        cliente_top = max(
+            clientes,
+            key=clientes.get
+        )
+
+        max_compras = clientes[cliente_top]
+
+        total_clientes_frecuentes = len(clientes)
+
+    promedio_compras = 0
+
+    if total_clientes_frecuentes > 0:
+
+        promedio_compras = sum(cantidades) / total_clientes_frecuentes
+
+    interpretacion = f"""
+    La IA analizó el comportamiento
+    de compra de los clientes registrados en el sistema.
+
+    Actualmente se identificaron
+    {total_clientes_frecuentes} clientes activos
+    con historial de compras.
+
+    El cliente con mayor frecuencia de compra es:
+    {cliente_top},
+    con un total de {max_compras} compras realizadas.
+
+    El promedio general de compras por cliente es de
+    {round(promedio_compras, 2)} operaciones.
+
+    El análisis evidencia que los clientes recurrentes
+    representan una fuente importante de ingresos
+    y estabilidad financiera para la ferretería.
+
+    También se detectó que algunos clientes realizan
+    compras periódicas en intervalos similares,
+    permitiendo anticipar futuras ventas
+    y mejorar la planificación comercial.
+
+    Recomendaciones Inteligentes:
+
+    • Implementar programas de fidelización.
+
+    • Aplicar descuentos personalizados
+      para clientes frecuentes.
+
+    • Crear promociones exclusivas
+      para incentivar compras recurrentes.
+
+    • Realizar seguimiento estratégico
+      de clientes con mayor actividad.
+
+    Conclusión IA:
+
+    El sistema determina que fortalecer la relación
+    con clientes frecuentes puede incrementar
+    las ventas y mejorar el crecimiento del negocio.
     """
-
     return render_template(
+
         'reporte2.html',
+
         grafica=grafica,
+
         interpretacion=interpretacion
     )
-  # ==========================================
+
+# ==========================================
 # REPORTE 3
 # PREDICCION INTELIGENTE
 # ==========================================
@@ -1106,11 +1207,84 @@ def reporte2():
 @login_required
 def reporte3():
 
+    from sqlalchemy import func
+    import numpy as np
+    from sklearn.linear_model import LinearRegression
+
+    # ======================================
+    # OBTENER VENTAS POR DIA
+    # ======================================
+    ventas_por_dia = db.session.query(
+
+        func.date(Venta.fecha),
+
+        func.sum(Venta.total)
+
+    ).group_by(
+
+        func.date(Venta.fecha)
+
+    ).all()
+
+    dias = []
+
+    montos = []
+
+    contador = 1
+
+    for fecha, total in ventas_por_dia:
+
+        dias.append([contador])
+
+        montos.append(float(total))
+
+        contador += 1
+
+    prediccion = 0
+
+    tendencia = "Sin datos suficientes"
+
+    # ======================================
+    # IA CON REGRESION LINEAL
+    # ======================================
+    if len(dias) >= 2:
+
+        X = np.array(dias)
+
+        y = np.array(montos)
+
+        modelo = LinearRegression()
+
+        modelo.fit(X, y)
+
+        siguiente_dia = np.array([[len(dias) + 1]])
+
+        prediccion = modelo.predict(
+            siguiente_dia
+        )[0]
+
+        # ==============================
+        # TENDENCIA
+        # ==============================
+        pendiente = modelo.coef_[0]
+
+        if pendiente > 0:
+            tendencia = "CRECIMIENTO"
+
+        elif pendiente < 0:
+            tendencia = "DISMINUCION"
+
+        else:
+            tendencia = "ESTABLE"
+
+    # ======================================
+    # PRODUCTOS EN RIESGO
+    # ======================================
     productos = Producto.query.all()
 
     riesgo = []
 
-    recomendados = []
+    stock_alto = []
 
     for producto in productos:
 
@@ -1118,36 +1292,148 @@ def reporte3():
             riesgo.append(producto)
 
         if producto.stock >= 20:
-            recomendados.append(producto)
+            stock_alto.append(producto)
 
-    explicacion = """
+    # ======================================
+    # ANALISIS IA AUTOMATICO
+    # ======================================
+    explicacion = f"""
     Modelo utilizado:
-    Sistema de análisis predictivo basado
-    en reglas de stock y demanda.
 
-    El algoritmo identifica productos
-    con riesgo de agotamiento y
-    productos con disponibilidad alta.
+    Regresión Lineal utilizando Scikit-Learn.
+
+    El algoritmo analiza el comportamiento
+    histórico de ventas registrado en el sistema
+    para identificar tendencias comerciales
+    y estimar futuras demandas.
+
+    Resultado del análisis:
+
+    La tendencia detectada actualmente es:
+    {tendencia}.
+
+    La IA estima que las próximas ventas
+    podrían alcanzar aproximadamente:
+
+    Bs. {round(prediccion, 2)}
+
+    según el comportamiento histórico.
     """
 
-    recomendaciones = """
-    Recomendaciones IA:
+    recomendaciones = f"""
+    Recomendaciones Inteligentes:
 
-    • Reabastecer productos con bajo stock.
+    • Mantener abastecidos los productos
+      con mayor salida comercial.
 
-    • Crear promociones en productos
-      con exceso de inventario.
+    • Supervisar productos con stock crítico.
 
-    • Mantener control semanal
-      del inventario.
+    • Aprovechar tendencias de crecimiento
+      para incrementar promociones.
 
-    • Automatizar alertas de stock mínimo.
+    • Revisar periódicamente el comportamiento
+      de ventas para mejorar decisiones.
+
+    Productos en riesgo:
+    {len(riesgo)}
+
+    Productos con stock alto:
+    {len(stock_alto)}
     """
 
+    # ======================================
+    # GRAFICA PREDICTIVA
+    # ======================================
+    grafica = None
+
+    if dias and montos:
+
+        plt.figure(figsize=(12,6))
+
+        x_real = list(range(1, len(montos)+1))
+
+        plt.plot(
+
+            x_real,
+
+            montos,
+
+            marker='o',
+
+            linewidth=3,
+
+            label='Ventas Reales'
+        )
+
+        # ==============================
+        # PREDICCION
+        # ==============================
+        if prediccion > 0:
+
+            plt.scatter(
+
+                len(montos)+1,
+
+                prediccion,
+
+                s=200,
+
+                marker='X',
+
+                label='Predicción IA'
+            )
+
+        plt.title(
+            'Prediccion Inteligente de Ventas',
+            fontsize=18,
+            fontweight='bold'
+        )
+
+        plt.xlabel('Dias')
+
+        plt.ylabel('Ventas')
+
+        plt.grid(True)
+
+        plt.legend()
+
+        plt.tight_layout()
+
+        buffer = BytesIO()
+
+        plt.savefig(
+            buffer,
+            format='png'
+        )
+
+        buffer.seek(0)
+
+        grafica = base64.b64encode(
+            buffer.getvalue()
+        ).decode('utf-8')
+
+        buffer.close()
+
+        plt.close()
+
+    # ======================================
+    # TEMPLATE
+    # ======================================
     return render_template(
+
         'reporte3.html',
+
         riesgo=riesgo,
-        recomendados=recomendados,
+
+        recomendados=stock_alto,
+
         explicacion=explicacion,
-        recomendaciones=recomendaciones
-    )  
+
+        recomendaciones=recomendaciones,
+
+        grafica=grafica,
+
+        prediccion=round(prediccion, 2),
+
+        tendencia=tendencia
+    )
